@@ -26,13 +26,22 @@ module serverFarm 'modules/appserviceplan.bicep' = {
   }
 }
 
-module appService 'arm-templates/appService-VNet.bicep' = {
-  name: 'appService-deploy'
+var appServices = [
+  {
+    name: '${namePrefix}-app1'
+  }
+  {
+    name: '${namePrefix}-app2'
+  }
+]
+
+module appService 'arm-templates/appService-VNet.bicep' = [for app in appServices: {
+  name: '${app.name}-deploy'
   scope: rg
   params:{
-    appName: 'steffes-webapp'
+    appName: app.name
     location: location
     serverFarmId: serverFarm.outputs.resourceId
     subnetId: vNet.outputs.subnet
   }
-}
+}]
