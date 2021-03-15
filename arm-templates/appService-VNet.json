@@ -32,7 +32,7 @@
     {
       "type": "Microsoft.Web/sites/config",
       "apiVersion": "2019-08-01",
-      "name": "[format('{0}/virtualNetwork', parameters('appName'))]",
+      "name": "[concat(parameters('appName'), '/virtualNetwork')]",
       "properties": {
         "subnetResourceId": "[parameters('subnetId')]",
         "swiftSupported": true
