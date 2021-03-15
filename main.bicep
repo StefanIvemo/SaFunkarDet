@@ -4,8 +4,8 @@ param location string = deployment().location
 param namePrefix string = 'saFunkarDet'
 
 resource rg 'Microsoft.Resources/resourceGroups@2020-06-01' = {
-  name: 'saFunkarDet-2021-rg'
-  location: deployment().location
+  name: '${namePrefix}-2021-rg'
+  location: location
 }
 
 module vNet 'vnet.bicep' = {
