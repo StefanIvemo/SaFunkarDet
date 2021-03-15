@@ -33,6 +33,9 @@ var appServices = [
   {
     name: '${namePrefix}-app2'
   }
+  {
+    name: '${namePrefix}-app3'
+  }
 ]
 
 module appService 'arm-templates/appService-VNet.bicep' = [for app in appServices: {

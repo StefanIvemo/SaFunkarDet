@@ -15,6 +15,14 @@ resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
         name: 'snet-storage'
         properties:{
           addressPrefix: '10.10.0.0/26'
+          delegations:[
+            {
+              name: 'delegation'
+              properties: {
+                serviceName: 'Microsoft.Web/serverFarms'
+              }
+            }
+          ]
         }
       }
     ]
