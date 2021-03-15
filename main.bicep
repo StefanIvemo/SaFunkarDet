@@ -1,37 +1,38 @@
 targetScope = 'subscription'
 
+param location string = deployment().location
+param namePrefix string = 'saFunkarDet'
+
 resource rg 'Microsoft.Resources/resourceGroups@2020-06-01' = {
-  name: 'SaFunkarDet-rg'
+  name: 'saFunkarDet-2021-rg'
   location: deployment().location
 }
 
-module appPlanDeploy 'appPlan.bicep' = {
-  name: 'appPlanDeploy'
+module vNet 'vnet.bicep' = {
+  name: 'vnet-deploy'
   scope: rg
   params: {
-    namePrefix: 'SaFunkarDet'
+    location: location
+    namePrefix: namePrefix
   }
 }
 
-var websites = [
-  {
-    name:'fancy'
-    tag: 'latest'
+module serverFarm 'modules/appserviceplan.bicep' = {
+  name: 'serverFarm-deploy'
+  scope: rg
+  params: {
+    name: '${namePrefix}-serverFarm'
+    location: location
   }
-  {
-    name: 'plain'
-    tag: 'plain-text'
-  }
-]
+}
 
-module siteDeploy 'arm-templates/site.bicep' = [for site in websites: {
-  name: '${site.name}siteDeploy'
+module appService 'arm-templates/appService-VNet.bicep' = {
+  name: 'appService-deploy'
   scope: rg
   params:{
-    location: deployment().location
-    appPlanId: appPlanDeploy.outputs.planId
-    namePrefix: site.name
-    dockerImage: 'nginxdemos/hello'
-    dockerImageTag: site.tag
+    appName: 'steffes-webapp'
+    location: location
+    serverFarmId: serverFarm.outputs.resourceId
+    subnetId: vNet.outputs.subnet
   }
-}]
+}

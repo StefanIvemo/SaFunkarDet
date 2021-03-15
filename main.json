@@ -1,0 +1,235 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[deployment().location]"
+    },
+    "namePrefix": {
+      "type": "string",
+      "defaultValue": "saFunkarDet"
+    }
+  },
+  "functions": [],
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2020-06-01",
+      "name": "saFunkarDet-2021-rg",
+      "location": "[deployment().location]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-10-01",
+      "name": "vnet-deploy",
+      "resourceGroup": "saFunkarDet-2021-rg",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "namePrefix": {
+            "value": "[parameters('namePrefix')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "namePrefix": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            }
+          },
+          "functions": [],
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2020-06-01",
+              "name": "[format('{0}-vnet', parameters('namePrefix'))]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "10.10.0.0/24"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "snet-storage",
+                    "properties": {
+                      "addressPrefix": "10.10.0.0/26"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "subnet": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', parameters('namePrefix')))).subnets[0].id]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', 'saFunkarDet-2021-rg')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-10-01",
+      "name": "serverFarm-deploy",
+      "resourceGroup": "saFunkarDet-2021-rg",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[format('{0}-serverFarm', parameters('namePrefix'))]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "name": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().id]"
+            },
+            "sku": {
+              "type": "string",
+              "defaultValue": "S1"
+            },
+            "kind": {
+              "type": "string",
+              "defaultValue": "kind"
+            }
+          },
+          "functions": [],
+          "resources": [
+            {
+              "type": "Microsoft.Web/serverfarms",
+              "apiVersion": "2019-08-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "S1"
+              },
+              "kind": "app"
+            }
+          ],
+          "outputs": {
+            "resourceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Web/serverfarms', parameters('name'))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', 'saFunkarDet-2021-rg')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-10-01",
+      "name": "appService-deploy",
+      "resourceGroup": "saFunkarDet-2021-rg",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "appName": {
+            "value": "steffes-webapp"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "serverFarmId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'saFunkarDet-2021-rg'), 'Microsoft.Resources/deployments', 'serverFarm-deploy'), '2019-10-01').outputs.resourceId.value]"
+          },
+          "subnetId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'saFunkarDet-2021-rg'), 'Microsoft.Resources/deployments', 'vnet-deploy'), '2019-10-01').outputs.subnet.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "appName": {
+              "type": "string",
+              "defaultValue": "[uniqueString(resourceGroup().id)]"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            },
+            "serverFarmId": {
+              "type": "string"
+            },
+            "subnetId": {
+              "type": "string"
+            }
+          },
+          "functions": [],
+          "resources": [
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2019-08-01",
+              "name": "[parameters('appName')]",
+              "location": "[parameters('location')]",
+              "kind": "app",
+              "properties": {
+                "serverFarmId": "[parameters('serverFarmId')]"
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites/config",
+              "apiVersion": "2019-08-01",
+              "name": "[format('{0}/virtualNetwork', parameters('appName'))]",
+              "properties": {
+                "subnetResourceId": "[parameters('subnetId')]",
+                "swiftSupported": true
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('appName'))]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', 'saFunkarDet-2021-rg')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'saFunkarDet-2021-rg'), 'Microsoft.Resources/deployments', 'serverFarm-deploy')]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'saFunkarDet-2021-rg'), 'Microsoft.Resources/deployments', 'vnet-deploy')]"
+      ]
+    }
+  ],
+  "metadata": {
+    "_generator": {
+      "name": "bicep (Bicep PowerShell 1.4.2)",
+      "version": "0.3.1.62928",
+      "templateHash": "11234928182099139752"
+    }
+  }
+}
