@@ -7,9 +7,9 @@ resource serverFarm 'Microsoft.Web/serverfarms@2019-08-01' = {
   name: name
   location: location
   sku: {
-    name: 'S1'
+    name: sku
   }
-  kind: 'app'
+  kind: kind
 }
 
 output resourceId string = serverFarm.id
