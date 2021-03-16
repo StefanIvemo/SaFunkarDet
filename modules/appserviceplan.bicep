@@ -1,7 +1,7 @@
 param name string
 param location string = resourceGroup().id
 param sku string = 'S1'
-param kind string = 'kind'
+param kind string = 'app'
 
 resource serverFarm 'Microsoft.Web/serverfarms@2019-08-01' = {
   name: name
