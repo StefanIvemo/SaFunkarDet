@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.4.1008.15138",
+      "templateHash": "9507124690024588173"
+    }
+  },
+  "parameters": {
+    "namePrefix": {
+      "type": "string",
+      "maxLength": 8
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    }
+  },
+  "functions": [],
+  "variables": {
+    "vaultName": "[format('{0}{1}vault', parameters('namePrefix'), uniqueString(resourceGroup().id))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.RecoveryServices/vaults",
+      "apiVersion": "2021-08-01",
+      "name": "[variables('vaultName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "RS0",
+        "tier": "Standard"
+      },
+      "properties": {}
+    }
+  ],
+  "outputs": {
+    "resourceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.RecoveryServices/vaults', variables('vaultName'))]"
+    },
+    "resourceName": {
+      "type": "string",
+      "value": "[variables('vaultName')]"
+    }
+  }
+}
